@@ -17,6 +17,7 @@ import {
   type ThemeChoice,
 } from './lib/theme'
 import { speakReply, stopVoiceOutput } from './lib/voice'
+import { ingestState, isBackendConfigured } from './lib/backend'
 import type { ChatMessage, Memory, PersistedState } from './types'
 
 const LANG_OPTIONS = [
@@ -132,6 +133,8 @@ export default function App() {
   }, [sessionGoal])
 
   const apiReady = isApiConfigured()
+  const backendReady = isBackendConfigured()
+  const [sendingData, setSendingData] = useState(false)
   const insights = useMemo(() => buildInsights(studioState), [studioState])
   const sessionProgress = Math.min((insights.userMessages / sessionGoal) * 100, 100)
   const suggestions = useMemo(() => {
@@ -212,6 +215,22 @@ export default function App() {
       setStudioError(e instanceof Error ? e.message : 'Something went wrong.')
     } finally {
       setStudioSending(false)
+    }
+  }
+
+  async function handleSendData() {
+    if (!backendReady) {
+      setStudioNotice('Backend not configured. Set VITE_BACKEND_URL to enable sending.')
+      return
+    }
+    setSendingData(true)
+    try {
+      await ingestState(studioState)
+      setStudioNotice('Data sent to backend successfully.')
+    } catch (e) {
+      setStudioError(e instanceof Error ? e.message : 'Send failed.')
+    } finally {
+      setSendingData(false)
     }
   }
 
@@ -599,6 +618,8 @@ export default function App() {
               onThemeChange={setTheme}
               onExport={() => downloadBackup(studioState)}
               onImportFile={handleImportBackup}
+              onSendData={handleSendData}
+              sendingData={sendingData}
               onReset={handleResetStudio}
             />
             {studioNotice && (

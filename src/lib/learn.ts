@@ -1,4 +1,5 @@
 import type { Memory } from '../types'
+import { backendLearn, isBackendConfigured } from './backend'
 
 type ExtractPayload = {
   newMemories: string[]
@@ -21,6 +22,13 @@ export async function extractFromTranscript(
   existingMemories: Memory[],
 ): Promise<ExtractPayload> {
   const { key, base, model } = getConfig()
+  if (isBackendConfigured()) {
+    const raw = await backendLearn(
+      transcript,
+      existingMemories.map((m) => m.text),
+    )
+    return parseExtractPayload(raw)
+  }
   if (!key?.trim()) {
     throw new Error('Add VITE_OPENAI_API_KEY to use “Learn from chat”.')
   }

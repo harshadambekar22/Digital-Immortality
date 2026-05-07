@@ -7,6 +7,8 @@ type Props = {
   onThemeChange: (t: ThemeChoice) => void
   onExport: () => void
   onImportFile: (file: File) => void
+  onSendData: () => void
+  sendingData: boolean
   onReset: () => void
 }
 
@@ -17,6 +19,8 @@ export function HeaderToolbar({
   onThemeChange,
   onExport,
   onImportFile,
+  onSendData,
+  sendingData,
   onReset,
 }: Props) {
   return (
@@ -46,6 +50,16 @@ export function HeaderToolbar({
 
         <button type="button" className="btn ghost sm" onClick={onExport}>
           Export backup
+        </button>
+
+        <button
+          type="button"
+          className="btn secondary sm"
+          onClick={onSendData}
+          disabled={sendingData}
+          title="Send your persona data to the backend"
+        >
+          {sendingData ? 'Sending…' : 'Send data'}
         </button>
 
         <label className="btn ghost sm file-import-label">

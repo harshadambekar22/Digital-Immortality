@@ -1,5 +1,6 @@
 import type { ChatMessage, Memory, PersonaProfile } from '../types'
 import { buildSystemPrompt, orderMemoriesForPrompt } from './persona'
+import { backendChatPersona, backendChatUniversal, isBackendConfigured } from './backend'
 
 const MAX_TURNS = 40
 
@@ -24,6 +25,9 @@ export async function completeUniversalReply(
 ): Promise<string> {
   const payload = recentForApi(messages)
   const { key, base, model } = getConfig()
+  if (isBackendConfigured()) {
+    return await backendChatUniversal(payload, preferredLanguage)
+  }
 
   const system = `You are a multilingual AI chatbot for a product called Digital Immortality.
 Understand and respond in ANY language.
@@ -81,6 +85,9 @@ export async function completePersonaReply(
   const system = buildSystemPrompt(persona, memories, preferences)
   const payload = recentForApi(messages)
   const { key, base, model } = getConfig()
+  if (isBackendConfigured()) {
+    return await backendChatPersona(system, payload)
+  }
 
   if (!key?.trim()) {
     return offlineReply(payload, memories, persona.name)
