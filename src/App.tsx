@@ -1,7 +1,23 @@
-import { type CSSProperties, useState } from 'react'
+import { type CSSProperties, useEffect, useLayoutEffect, useMemo, useState } from 'react'
 import './App.css'
-import { completeUniversalReply, isApiConfigured } from './lib/chat'
-import type { ChatMessage } from './types'
+import { ChatPanel } from './components/ChatPanel'
+import { HeaderToolbar } from './components/HeaderToolbar'
+import { InsightsPanel } from './components/InsightsPanel'
+import { PersonaPanel } from './components/PersonaPanel'
+import { completePersonaReply, completeUniversalReply, isApiConfigured } from './lib/chat'
+import { downloadBackup, parseBackupJson } from './lib/export'
+import { buildInsights } from './lib/insights'
+import { extractFromTranscript } from './lib/learn'
+import { defaultState, loadState, saveState } from './lib/storage'
+import {
+  applyTheme,
+  getStoredTheme,
+  setStoredTheme,
+  subscribeSystemTheme,
+  type ThemeChoice,
+} from './lib/theme'
+import { speakReply, stopVoiceOutput } from './lib/voice'
+import type { ChatMessage, Memory, PersistedState } from './types'
 
 const LANG_OPTIONS = [
   'auto',
@@ -46,12 +62,93 @@ function createStars(count: number): StarPoint[] {
 const STAR_POINTS = createStars(120)
 
 export default function App() {
+  const [studioState, setStudioState] = useState<PersistedState>(
+    () => loadState() ?? defaultState(),
+  )
+  const [studioDraft, setStudioDraft] = useState('')
+  const [studioSending, setStudioSending] = useState(false)
+  const [studioError, setStudioError] = useState<string | null>(null)
+  const [studioNotice, setStudioNotice] = useState<string | null>(null)
+  const [learnBusy, setLearnBusy] = useState(false)
+  const [memoryDraft, setMemoryDraft] = useState('')
+  const [newPrefKey, setNewPrefKey] = useState('')
+  const [theme, setTheme] = useState<ThemeChoice>(() => getStoredTheme())
+  const [sessionGoal, setSessionGoal] = useState<number>(() => {
+    try {
+      const raw = Number(localStorage.getItem('di:session-goal') ?? 8)
+      return Number.isFinite(raw) ? Math.min(Math.max(raw, 3), 20) : 8
+    } catch {
+      return 8
+    }
+  })
+  const [voiceRepliesEnabled, setVoiceRepliesEnabled] = useState<boolean>(() => {
+    try {
+      return localStorage.getItem('di:voice-replies') === '1'
+    } catch {
+      return false
+    }
+  })
+
   const [messages, setMessages] = useState<ChatMessage[]>([])
   const [draft, setDraft] = useState('')
   const [sending, setSending] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [language, setLanguage] = useState<(typeof LANG_OPTIONS)[number]>('auto')
+
+  useEffect(() => {
+    saveState(studioState)
+  }, [studioState])
+
+  useLayoutEffect(() => {
+    applyTheme(theme)
+    setStoredTheme(theme)
+  }, [theme])
+
+  useEffect(() => {
+    if (theme !== 'system') return
+    return subscribeSystemTheme(() => applyTheme('system'))
+  }, [theme])
+
+  useEffect(() => {
+    if (!studioNotice) return
+    const t = window.setTimeout(() => setStudioNotice(null), 4500)
+    return () => window.clearTimeout(t)
+  }, [studioNotice])
+
+  useEffect(() => {
+    try {
+      localStorage.setItem('di:voice-replies', voiceRepliesEnabled ? '1' : '0')
+    } catch {
+      // ignore storage errors
+    }
+  }, [voiceRepliesEnabled])
+
+  useEffect(() => {
+    try {
+      localStorage.setItem('di:session-goal', String(sessionGoal))
+    } catch {
+      // ignore storage errors
+    }
+  }, [sessionGoal])
+
   const apiReady = isApiConfigured()
+  const insights = useMemo(() => buildInsights(studioState), [studioState])
+  const sessionProgress = Math.min((insights.userMessages / sessionGoal) * 100, 100)
+  const suggestions = useMemo(() => {
+    const topMemory = studioState.memories[0]?.text
+    const tone = studioState.preferences.tone?.trim()
+    const personaName = studioState.persona.name || 'My persona'
+    const base = [
+      'Tell me one thing you learned about me from our recent chats.',
+      'Ask me three questions that would make my digital persona more accurate.',
+      'Write a short diary reflection in my style for today.',
+      'Summarize my current values and priorities from memory.',
+    ]
+    if (topMemory) base.unshift(`Use this memory in context: ${topMemory.slice(0, 80)}`)
+    if (tone) base.unshift(`Respond in a ${tone} tone while staying truthful.`)
+    base.push(`How can ${personaName} become more authentic over time?`)
+    return base.slice(0, 6)
+  }, [studioState.memories, studioState.preferences, studioState.persona.name])
 
   async function handleSend() {
     const trimmed = draft.trim()
@@ -85,6 +182,108 @@ export default function App() {
     } finally {
       setSending(false)
     }
+  }
+
+  async function handleStudioSend(text: string) {
+    const userMsg: ChatMessage = {
+      id: uid(),
+      role: 'user',
+      content: text,
+      createdAt: Date.now(),
+    }
+    const messagesForApi = [...studioState.messages, userMsg]
+    setStudioState((s) => ({ ...s, messages: messagesForApi }))
+    setStudioError(null)
+    setStudioSending(true)
+
+    try {
+      const reply = await completePersonaReply(
+        studioState.persona,
+        studioState.memories,
+        studioState.preferences,
+        messagesForApi,
+      )
+      if (voiceRepliesEnabled) speakReply(reply)
+      setStudioState((s) => ({
+        ...s,
+        messages: [...s.messages, { id: uid(), role: 'assistant', content: reply, createdAt: Date.now() }],
+      }))
+    } catch (e) {
+      setStudioError(e instanceof Error ? e.message : 'Something went wrong.')
+    } finally {
+      setStudioSending(false)
+    }
+  }
+
+  function handleAddMemory(text: string, source: Memory['source'] = 'manual') {
+    const trimmed = text.trim()
+    if (!trimmed) return
+    setStudioState((s) => ({
+      ...s,
+      memories: [{ id: uid(), text: trimmed, createdAt: Date.now(), source }, ...s.memories],
+    }))
+  }
+
+  function handleTogglePin(id: string) {
+    setStudioState((s) => ({
+      ...s,
+      memories: s.memories.map((m) => (m.id === id ? { ...m, pinned: !m.pinned } : m)),
+    }))
+  }
+
+  function handleLearnFromChat() {
+    const lines = studioState.messages.slice(-24).map((m) => `${m.role === 'user' ? 'User' : 'Persona'}: ${m.content}`)
+    if (lines.length < 2) return
+    setLearnBusy(true)
+    setStudioError(null)
+    extractFromTranscript(lines.join('\n'), studioState.memories)
+      .then(({ newMemories, preferences }) => {
+        setStudioState((s) => ({
+          ...s,
+          memories: [
+            ...newMemories.map((t) => ({
+              id: uid(),
+              text: t,
+              createdAt: Date.now(),
+              source: 'learned' as const,
+            })),
+            ...s.memories,
+          ],
+          preferences: { ...s.preferences, ...preferences },
+        }))
+        setStudioNotice('Added new items from chat to Memories / Preferences.')
+      })
+      .catch((e) => setStudioError(e instanceof Error ? e.message : 'Learning failed.'))
+      .finally(() => setLearnBusy(false))
+  }
+
+  function handleResetStudio() {
+    if (
+      !window.confirm(
+        'Erase all memories, preferences, and chat from this browser? This cannot be undone.',
+      )
+    ) {
+      return
+    }
+    setStudioState(defaultState())
+    setStudioDraft('')
+    stopVoiceOutput()
+    setStudioError(null)
+    setStudioNotice(null)
+  }
+
+  function handleImportBackup(file: File) {
+    setStudioError(null)
+    void file.text().then((raw) => {
+      const parsed = parseBackupJson(raw)
+      if (!parsed) {
+        setStudioError('That file is not a valid Digital Immortality backup.')
+        return
+      }
+      if (!window.confirm('Replace all current data with this backup?')) return
+      setStudioState(parsed)
+      setStudioNotice('Backup restored successfully.')
+    })
   }
 
   return (
@@ -122,6 +321,9 @@ export default function App() {
           </li>
           <li>
             <a href="#persona">Your Persona</a>
+          </li>
+          <li>
+            <a href="#studio">Studio</a>
           </li>
           <li>
             <a href="#pricing">Pricing</a>
@@ -375,6 +577,113 @@ export default function App() {
                 <sup>₹</sup>4,999
               </p>
               <p className="price-period">per month</p>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section id="studio">
+        <div className="section-inner">
+          <p className="section-label">Interactive Studio</p>
+          <h2 className="section-title">Full Persona Builder</h2>
+          <p className="section-desc">
+            All core features are active here: memory, preferences, voice, learning,
+            insights, backup/restore, and conversational persona chat.
+          </p>
+
+          <div className="studio-wrap">
+            <HeaderToolbar
+              memoryCount={studioState.memories.length}
+              messageCount={studioState.messages.length}
+              theme={theme}
+              onThemeChange={setTheme}
+              onExport={() => downloadBackup(studioState)}
+              onImportFile={handleImportBackup}
+              onReset={handleResetStudio}
+            />
+            {studioNotice && (
+              <div className="banner notice" role="status">
+                {studioNotice}
+              </div>
+            )}
+
+            <div className="studio-grid">
+              <div>
+                <PersonaPanel
+                  persona={studioState.persona}
+                  onPersonaChange={(persona) => setStudioState((s) => ({ ...s, persona }))}
+                  memories={studioState.memories}
+                  onAddMemory={(t) => handleAddMemory(t, 'manual')}
+                  onRemoveMemory={(id) =>
+                    setStudioState((s) => ({
+                      ...s,
+                      memories: s.memories.filter((m) => m.id !== id),
+                    }))
+                  }
+                  onTogglePin={handleTogglePin}
+                  preferences={studioState.preferences}
+                  onPreferenceChange={(k, v) =>
+                    setStudioState((s) => ({
+                      ...s,
+                      preferences: { ...s.preferences, [k]: v },
+                    }))
+                  }
+                  onRemovePreference={(k) =>
+                    setStudioState((s) => {
+                      const next = { ...s.preferences }
+                      delete next[k]
+                      return { ...s, preferences: next }
+                    })
+                  }
+                  onAddPreference={() => {
+                    const key = newPrefKey.trim()
+                    if (!key) return
+                    setStudioState((s) => ({
+                      ...s,
+                      preferences: { ...s.preferences, [key]: '' },
+                    }))
+                    setNewPrefKey('')
+                  }}
+                  newPrefKey={newPrefKey}
+                  onNewPrefKey={setNewPrefKey}
+                  memoryDraft={memoryDraft}
+                  onMemoryDraft={setMemoryDraft}
+                />
+              </div>
+
+              <div>
+                <InsightsPanel
+                  insights={insights}
+                  sessionGoal={sessionGoal}
+                  onSessionGoalChange={setSessionGoal}
+                  progress={sessionProgress}
+                  onUsePrompt={setStudioDraft}
+                />
+                <ChatPanel
+                  messages={studioState.messages}
+                  sending={studioSending}
+                  error={studioError}
+                  apiReady={apiReady}
+                  draft={studioDraft}
+                  onDraftChange={setStudioDraft}
+                  onSend={handleStudioSend}
+                  onAddMemory={(t) => handleAddMemory(t, 'chat')}
+                  onLearnFromChat={handleLearnFromChat}
+                  learning={learnBusy}
+                  onClearChat={() =>
+                    setStudioState((s) => ({ ...s, messages: [] }))
+                  }
+                  suggestions={suggestions}
+                  onUseSuggestion={setStudioDraft}
+                  voiceRepliesEnabled={voiceRepliesEnabled}
+                  onToggleVoiceReplies={() =>
+                    setVoiceRepliesEnabled((prev) => {
+                      if (prev) stopVoiceOutput()
+                      return !prev
+                    })
+                  }
+                />
+              </div>
             </div>
           </div>
         </div>

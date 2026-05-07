@@ -687,3 +687,281 @@ footer {
     text-align: center;
   }
 }
+
+/* Studio section styles (integrated feature app) */
+.studio-wrap {
+  margin-top: 2rem;
+  border: 0.5px solid var(--border);
+  border-radius: 14px;
+  padding: 1rem;
+  background: rgba(10, 10, 20, 0.55);
+}
+
+.studio-grid {
+  margin-top: 1rem;
+  display: grid;
+  grid-template-columns: minmax(280px, 360px) 1fr;
+  gap: 1rem;
+}
+
+.persona-panel,
+.chat-panel,
+.insights-panel {
+  border: 0.5px solid var(--border);
+  border-radius: 12px;
+  background: rgba(12, 12, 24, 0.88);
+  padding: 0.85rem;
+}
+
+.header-toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  gap: 0.75rem;
+  border: 0.5px solid var(--border);
+  border-radius: 10px;
+  padding: 0.7rem;
+  background: rgba(201, 168, 76, 0.06);
+}
+
+.header-actions,
+.header-stats {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+}
+
+.header-stats {
+  color: var(--text-muted);
+  font-size: 0.8rem;
+}
+
+.sep {
+  color: var(--text-dim);
+}
+
+.btn {
+  border-radius: 8px;
+  padding: 0.42rem 0.7rem;
+  font: inherit;
+  font-size: 0.8rem;
+  cursor: pointer;
+  border: 0.5px solid var(--border);
+  background: rgba(255, 255, 255, 0.02);
+  color: var(--text);
+}
+
+.btn.primary {
+  background: var(--gold);
+  color: var(--ink);
+  border-color: var(--gold);
+}
+
+.btn.secondary {
+  background: rgba(123, 107, 218, 0.13);
+  border-color: var(--border-soul);
+}
+
+.btn.ghost {
+  background: transparent;
+}
+
+.btn.danger {
+  color: #fca5a5;
+  border-color: rgba(248, 113, 113, 0.4);
+}
+
+.btn.sm {
+  font-size: 0.76rem;
+  padding: 0.32rem 0.58rem;
+}
+
+.field label,
+.subsection h2,
+.insights-panel h3 {
+  color: var(--gold2);
+}
+
+.field input,
+.field textarea,
+.inline-add input,
+.memory-search,
+.pref-row input,
+.pref-add input,
+.chat-form textarea,
+.theme-select {
+  width: 100%;
+  border: 0.5px solid var(--border);
+  border-radius: 8px;
+  background: rgba(10, 10, 20, 0.9);
+  color: var(--text);
+  padding: 0.45rem 0.6rem;
+  font: inherit;
+}
+
+.voice-presets,
+.chat-toolbar,
+.bubble-actions,
+.chat-form-row,
+.pref-add,
+.header-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.45rem;
+}
+
+.preset-chip,
+.suggestion-chip {
+  border: 0.5px solid var(--border);
+  border-radius: 999px;
+  background: rgba(201, 168, 76, 0.05);
+  color: var(--text);
+  font: inherit;
+  font-size: 0.74rem;
+  padding: 0.24rem 0.55rem;
+  cursor: pointer;
+}
+
+.memory-list,
+.pref-rows {
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+  margin: 0;
+  padding: 0;
+}
+
+.memory-list li {
+  display: grid;
+  grid-template-columns: auto 1fr auto auto;
+  gap: 0.35rem;
+  border: 0.5px solid var(--border);
+  border-radius: 8px;
+  padding: 0.35rem 0.5rem;
+}
+
+.pin-btn,
+.icon-btn {
+  border: none;
+  background: transparent;
+  color: var(--text-dim);
+  cursor: pointer;
+}
+
+.pin-btn.active {
+  color: var(--gold2);
+}
+
+.chat-messages {
+  max-height: 340px;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  margin: 0.6rem 0;
+}
+
+.bubble {
+  border: 0.5px solid var(--border);
+  border-radius: 10px;
+  padding: 0.55rem 0.65rem;
+}
+
+.bubble.user {
+  background: rgba(123, 107, 218, 0.15);
+  border-color: var(--border-soul);
+}
+
+.bubble.assistant {
+  background: rgba(201, 168, 76, 0.05);
+}
+
+.bubble-head {
+  display: flex;
+  justify-content: space-between;
+  color: var(--text-dim);
+  font-size: 0.72rem;
+  margin-bottom: 0.2rem;
+}
+
+.bubble-text {
+  margin: 0;
+  white-space: pre-wrap;
+}
+
+.linkish {
+  border: none;
+  background: none;
+  color: var(--gold2);
+  cursor: pointer;
+  font-size: 0.76rem;
+  padding: 0;
+}
+
+.insight-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 0.5rem;
+}
+
+.insight-card {
+  border: 0.5px solid var(--border);
+  border-radius: 8px;
+  padding: 0.5rem;
+}
+
+.insight-value {
+  color: var(--text);
+}
+
+.goal-progress {
+  height: 8px;
+  border: 0.5px solid var(--border);
+  border-radius: 999px;
+  margin-top: 0.25rem;
+  overflow: hidden;
+}
+
+.goal-progress > div {
+  height: 100%;
+  background: var(--gold);
+}
+
+.banner.notice,
+.banner.error {
+  border-radius: 8px;
+  padding: 0.45rem 0.55rem;
+  font-size: 0.8rem;
+}
+
+.banner.notice {
+  border: 0.5px solid rgba(74, 222, 128, 0.4);
+  background: rgba(74, 222, 128, 0.12);
+}
+
+.banner.error {
+  border: 0.5px solid rgba(248, 113, 113, 0.4);
+  background: rgba(248, 113, 113, 0.12);
+}
+
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  border: 0;
+}
+
+@media (max-width: 1024px) {
+  .studio-grid {
+    grid-template-columns: 1fr;
+  }
+  .insight-grid {
+    grid-template-columns: 1fr;
+  }
+}

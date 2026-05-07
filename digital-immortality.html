@@ -1,0 +1,849 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Digital Immortality — Preserve Your Consciousness</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Cinzel+Decorative:wght@400;700&family=Cormorant+Garamond:ital,wght@0,300;0,400;0,600;1,300;1,400&display=swap" rel="stylesheet">
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --ink: #08080e;
+    --ink2: #111122;
+    --gold: #c9a84c;
+    --gold2: #e8c97a;
+    --gold3: #f5e4b3;
+    --soul: #7b6bda;
+    --soul2: #a89de8;
+    --text: #f0eade;
+    --text-muted: rgba(240,234,222,0.5);
+    --text-dim: rgba(240,234,222,0.25);
+    --glass: rgba(201,168,76,0.07);
+    --glass2: rgba(123,107,218,0.08);
+    --border: rgba(201,168,76,0.15);
+    --border-soul: rgba(123,107,218,0.2);
+  }
+
+  html { scroll-behavior: smooth; }
+
+  body {
+    background: var(--ink);
+    color: var(--text);
+    font-family: 'Cormorant Garamond', serif;
+    font-size: 17px;
+    line-height: 1.7;
+    overflow-x: hidden;
+    cursor: crosshair;
+  }
+
+  /* ── Scrollbar ── */
+  ::-webkit-scrollbar { width: 4px; }
+  ::-webkit-scrollbar-track { background: var(--ink); }
+  ::-webkit-scrollbar-thumb { background: var(--gold); border-radius: 2px; }
+
+  /* ── Grain overlay ── */
+  body::before {
+    content: '';
+    position: fixed;
+    inset: 0;
+    background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 300 300' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.045'/%3E%3C/svg%3E");
+    pointer-events: none;
+    z-index: 999;
+  }
+
+  /* ── Stars background ── */
+  .stars {
+    position: fixed;
+    inset: 0;
+    pointer-events: none;
+    z-index: 0;
+    overflow: hidden;
+  }
+  .star {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    background: var(--gold2);
+    border-radius: 50%;
+    opacity: 0;
+    animation: twinkle var(--d, 4s) var(--delay, 0s) ease-in-out infinite;
+  }
+  @keyframes twinkle {
+    0%, 100% { opacity: 0; transform: scale(1); }
+    50% { opacity: var(--op, 0.6); transform: scale(1.5); }
+  }
+
+  /* ── NAV ── */
+  nav {
+    position: fixed;
+    top: 0; left: 0; right: 0;
+    z-index: 100;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 1.2rem 3rem;
+    border-bottom: 0.5px solid var(--border);
+    background: rgba(8,8,14,0.85);
+    backdrop-filter: blur(12px);
+  }
+  .nav-logo {
+    font-family: 'Cinzel Decorative', serif;
+    font-size: 13px;
+    color: var(--gold);
+    letter-spacing: 0.1em;
+    text-decoration: none;
+  }
+  .nav-links { display: flex; gap: 2rem; list-style: none; }
+  .nav-links a {
+    font-size: 12px;
+    letter-spacing: 0.15em;
+    text-transform: uppercase;
+    color: var(--text-muted);
+    text-decoration: none;
+    transition: color 0.2s;
+  }
+  .nav-links a:hover { color: var(--gold2); }
+  .nav-cta {
+    font-family: 'Cinzel Decorative', serif;
+    font-size: 10px;
+    letter-spacing: 0.1em;
+    background: var(--gold);
+    color: var(--ink);
+    border: none;
+    padding: 8px 20px;
+    border-radius: 4px;
+    cursor: pointer;
+    font-weight: 700;
+    transition: background 0.2s;
+  }
+  .nav-cta:hover { background: var(--gold2); }
+
+  /* ── HERO ── */
+  .hero {
+    position: relative;
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+    padding: 8rem 2rem 4rem;
+    z-index: 1;
+  }
+
+  .orb-container {
+    position: relative;
+    width: 180px;
+    height: 180px;
+    margin: 0 auto 3rem;
+  }
+  .orb {
+    width: 180px;
+    height: 180px;
+    border-radius: 50%;
+    background: radial-gradient(circle at 35% 35%, rgba(123,107,218,0.4) 0%, rgba(201,168,76,0.1) 40%, transparent 70%);
+    border: 1px solid rgba(201,168,76,0.25);
+    position: relative;
+    animation: breathe 4s ease-in-out infinite;
+  }
+  .orb-inner {
+    position: absolute;
+    inset: 20px;
+    border-radius: 50%;
+    background: radial-gradient(circle at 40% 40%, rgba(123,107,218,0.6), transparent 60%);
+    animation: breathe 4s ease-in-out infinite reverse;
+  }
+  .orb-dot {
+    position: absolute;
+    top: 50%; left: 50%;
+    transform: translate(-50%, -50%);
+    width: 8px; height: 8px;
+    border-radius: 50%;
+    background: var(--gold2);
+    box-shadow: 0 0 20px var(--gold), 0 0 40px rgba(201,168,76,0.3);
+  }
+  .orb-ring {
+    position: absolute;
+    border-radius: 50%;
+    border: 0.5px solid;
+    top: 50%; left: 50%;
+    transform: translate(-50%, -50%);
+    animation: spin linear infinite;
+  }
+  .orb-ring:nth-child(3) { width: 210px; height: 210px; border-color: rgba(201,168,76,0.2); animation-duration: 12s; }
+  .orb-ring:nth-child(4) { width: 245px; height: 245px; border-color: rgba(123,107,218,0.12); animation-duration: 20s; animation-direction: reverse; }
+  .orb-ring:nth-child(5) { width: 280px; height: 280px; border-color: rgba(201,168,76,0.07); animation-duration: 30s; }
+
+  @keyframes breathe {
+    0%, 100% { box-shadow: 0 0 40px rgba(123,107,218,0.2); }
+    50% { box-shadow: 0 0 80px rgba(123,107,218,0.45), 0 0 120px rgba(201,168,76,0.1); }
+  }
+  @keyframes spin { from { transform: translate(-50%,-50%) rotate(0); } to { transform: translate(-50%,-50%) rotate(360deg); } }
+
+  .hero-eyebrow {
+    font-size: 11px;
+    letter-spacing: 0.4em;
+    color: var(--gold);
+    text-transform: uppercase;
+    margin-bottom: 1.2rem;
+    opacity: 0.8;
+    animation: fadeUp 1s ease both;
+  }
+  .hero-title {
+    font-family: 'Cinzel Decorative', serif;
+    font-size: clamp(32px, 6vw, 72px);
+    font-weight: 700;
+    line-height: 1.05;
+    color: var(--text);
+    margin-bottom: 0.4rem;
+    animation: fadeUp 1s 0.15s ease both;
+  }
+  .hero-title .accent { color: var(--gold); }
+  .hero-sub-title {
+    font-family: 'Cinzel Decorative', serif;
+    font-size: clamp(16px, 2.5vw, 28px);
+    font-weight: 400;
+    color: var(--soul2);
+    margin-bottom: 1.8rem;
+    animation: fadeUp 1s 0.25s ease both;
+  }
+  .hero-desc {
+    max-width: 560px;
+    font-size: 18px;
+    color: var(--text-muted);
+    font-style: italic;
+    font-weight: 300;
+    line-height: 1.75;
+    margin: 0 auto 3rem;
+    animation: fadeUp 1s 0.35s ease both;
+  }
+  .hero-btns {
+    display: flex;
+    gap: 1rem;
+    justify-content: center;
+    flex-wrap: wrap;
+    margin-bottom: 4rem;
+    animation: fadeUp 1s 0.45s ease both;
+  }
+  .btn-primary {
+    font-family: 'Cinzel Decorative', serif;
+    font-size: 11px;
+    letter-spacing: 0.1em;
+    background: var(--gold);
+    color: var(--ink);
+    border: none;
+    padding: 14px 36px;
+    border-radius: 4px;
+    cursor: pointer;
+    font-weight: 700;
+    transition: all 0.2s;
+  }
+  .btn-primary:hover { background: var(--gold2); transform: translateY(-1px); box-shadow: 0 8px 30px rgba(201,168,76,0.3); }
+  .btn-ghost {
+    font-family: 'Cinzel Decorative', serif;
+    font-size: 11px;
+    letter-spacing: 0.1em;
+    background: transparent;
+    color: var(--gold);
+    border: 0.5px solid rgba(201,168,76,0.4);
+    padding: 14px 36px;
+    border-radius: 4px;
+    cursor: pointer;
+    transition: all 0.2s;
+  }
+  .btn-ghost:hover { border-color: var(--gold); background: var(--glass); }
+
+  .scroll-hint {
+    font-size: 11px;
+    letter-spacing: 0.2em;
+    color: var(--text-dim);
+    text-transform: uppercase;
+    animation: fadeUp 1s 0.6s ease both, bobble 2.5s 1.6s ease-in-out infinite;
+  }
+  @keyframes bobble { 0%,100%{transform:translateY(0)}50%{transform:translateY(4px)} }
+  @keyframes fadeUp { from{opacity:0;transform:translateY(20px)}to{opacity:1;transform:translateY(0)} }
+
+  /* ── DIVIDER ── */
+  .divider {
+    display: flex;
+    align-items: center;
+    gap: 1.5rem;
+    padding: 0 3rem;
+    margin: 3rem 0;
+  }
+  .divider-line { flex: 1; height: 0.5px; background: linear-gradient(90deg, transparent, var(--border), transparent); }
+  .divider-gem { width: 6px; height: 6px; background: var(--gold); transform: rotate(45deg); }
+
+  /* ── SECTION WRAPPER ── */
+  section { position: relative; z-index: 1; }
+  .section-inner { max-width: 1100px; margin: 0 auto; padding: 5rem 2rem; }
+  .section-label {
+    font-size: 10px;
+    letter-spacing: 0.4em;
+    color: var(--gold);
+    text-transform: uppercase;
+    margin-bottom: 0.8rem;
+    opacity: 0.7;
+  }
+  .section-title {
+    font-family: 'Cinzel Decorative', serif;
+    font-size: clamp(22px, 3.5vw, 38px);
+    font-weight: 700;
+    color: var(--text);
+    margin-bottom: 1rem;
+    line-height: 1.2;
+  }
+  .section-desc {
+    font-size: 17px;
+    color: var(--text-muted);
+    font-style: italic;
+    max-width: 520px;
+    line-height: 1.7;
+  }
+
+  /* ── FEATURES ── */
+  .features-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+    gap: 16px;
+    margin-top: 3rem;
+  }
+  .feat-card {
+    background: var(--glass);
+    border: 0.5px solid var(--border);
+    border-radius: 12px;
+    padding: 2rem 1.5rem;
+    transition: all 0.3s;
+    position: relative;
+    overflow: hidden;
+  }
+  .feat-card::before {
+    content: '';
+    position: absolute;
+    top: 0; left: 0; right: 0;
+    height: 1px;
+    background: linear-gradient(90deg, transparent, var(--gold2), transparent);
+    opacity: 0;
+    transition: opacity 0.3s;
+  }
+  .feat-card:hover { border-color: rgba(201,168,76,0.4); transform: translateY(-3px); }
+  .feat-card:hover::before { opacity: 1; }
+  .feat-icon {
+    width: 44px; height: 44px;
+    border: 0.5px solid var(--border);
+    border-radius: 8px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 20px;
+    color: var(--gold2);
+    margin-bottom: 1.2rem;
+    background: rgba(201,168,76,0.06);
+  }
+  .feat-title {
+    font-family: 'Cinzel Decorative', serif;
+    font-size: 12px;
+    color: var(--gold3);
+    letter-spacing: 0.06em;
+    margin-bottom: 0.6rem;
+  }
+  .feat-desc {
+    font-size: 14px;
+    color: var(--text-muted);
+    font-style: italic;
+    line-height: 1.6;
+  }
+
+  /* ── HOW IT WORKS ── */
+  .how-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+    gap: 0;
+    margin-top: 3.5rem;
+    position: relative;
+  }
+  .how-grid::before {
+    content: '';
+    position: absolute;
+    top: 22px; left: 10%; right: 10%;
+    height: 0.5px;
+    background: linear-gradient(90deg, transparent, var(--border), var(--border), transparent);
+    z-index: 0;
+  }
+  .how-step {
+    text-align: center;
+    padding: 0 1rem;
+    position: relative;
+    z-index: 1;
+  }
+  .how-num {
+    width: 44px; height: 44px;
+    border-radius: 50%;
+    border: 0.5px solid rgba(201,168,76,0.4);
+    background: var(--ink);
+    color: var(--gold);
+    font-family: 'Cinzel Decorative', serif;
+    font-size: 14px;
+    display: flex; align-items: center; justify-content: center;
+    margin: 0 auto 1.2rem;
+  }
+  .how-label {
+    font-family: 'Cinzel Decorative', serif;
+    font-size: 11px;
+    color: var(--text);
+    letter-spacing: 0.05em;
+    margin-bottom: 0.5rem;
+  }
+  .how-desc { font-size: 13px; color: var(--text-muted); font-style: italic; line-height: 1.5; }
+
+  /* ── QUOTE BAND ── */
+  .quote-band {
+    border-top: 0.5px solid var(--border);
+    border-bottom: 0.5px solid var(--border);
+    background: var(--glass2);
+    padding: 4rem 2rem;
+    text-align: center;
+  }
+  .quote-mark { font-size: 60px; color: rgba(201,168,76,0.2); font-family: 'Cinzel Decorative', serif; line-height: 0.5; display: block; margin-bottom: 1.5rem; }
+  .quote-text { font-size: clamp(18px, 3vw, 26px); font-style: italic; font-weight: 300; color: var(--text); max-width: 700px; margin: 0 auto 1.5rem; line-height: 1.6; }
+  .quote-cite { font-size: 12px; letter-spacing: 0.15em; color: var(--gold); text-transform: uppercase; }
+
+  /* ── PERSONA DEMO ── */
+  .persona-demo {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 3rem;
+    align-items: center;
+  }
+  @media (max-width: 720px) { .persona-demo { grid-template-columns: 1fr; } }
+  .chat-mockup {
+    background: rgba(10,10,20,0.8);
+    border: 0.5px solid var(--border);
+    border-radius: 16px;
+    overflow: hidden;
+  }
+  .chat-header {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 1rem 1.2rem;
+    border-bottom: 0.5px solid var(--border);
+    background: rgba(201,168,76,0.04);
+  }
+  .avatar {
+    width: 36px; height: 36px;
+    border-radius: 50%;
+    background: radial-gradient(circle at 35% 35%, var(--soul2), var(--soul));
+    border: 1px solid rgba(201,168,76,0.3);
+    display: flex; align-items: center; justify-content: center;
+    font-size: 13px;
+    font-weight: 600;
+    color: #fff;
+  }
+  .chat-name { font-size: 13px; font-weight: 600; color: var(--text); }
+  .chat-status { font-size: 11px; color: var(--gold); font-style: italic; }
+  .online-dot { width: 7px; height: 7px; border-radius: 50%; background: #4ade80; margin-left: auto; box-shadow: 0 0 8px rgba(74,222,128,0.5); }
+  .chat-body { padding: 1.2rem; display: flex; flex-direction: column; gap: 12px; }
+  .msg {
+    max-width: 82%;
+    padding: 10px 14px;
+    border-radius: 12px;
+    font-size: 13px;
+    line-height: 1.5;
+  }
+  .msg.them { background: rgba(123,107,218,0.15); border: 0.5px solid var(--border-soul); color: var(--text-muted); border-radius: 4px 12px 12px 12px; }
+  .msg.me { background: var(--glass); border: 0.5px solid var(--border); color: var(--text); margin-left: auto; border-radius: 12px 4px 12px 12px; font-style: italic; }
+  .typing { display: flex; gap: 4px; align-items: center; padding: 10px 14px; }
+  .typing span { width: 6px; height: 6px; border-radius: 50%; background: var(--soul2); animation: bounce 1.2s ease-in-out infinite; }
+  .typing span:nth-child(2) { animation-delay: 0.2s; }
+  .typing span:nth-child(3) { animation-delay: 0.4s; }
+  @keyframes bounce { 0%,100%{transform:translateY(0);opacity:0.4}50%{transform:translateY(-4px);opacity:1} }
+
+  /* ── PRICING ── */
+  .pricing-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+    gap: 16px;
+    margin-top: 3rem;
+  }
+  .price-card {
+    border: 0.5px solid var(--border);
+    border-radius: 14px;
+    padding: 2rem 1.5rem;
+    position: relative;
+    transition: transform 0.2s;
+  }
+  .price-card:hover { transform: translateY(-2px); }
+  .price-card.featured {
+    border-color: rgba(201,168,76,0.5);
+    background: rgba(201,168,76,0.04);
+  }
+  .price-badge {
+    position: absolute;
+    top: -10px; left: 50%;
+    transform: translateX(-50%);
+    background: var(--gold);
+    color: var(--ink);
+    font-size: 9px;
+    font-family: 'Cinzel Decorative', serif;
+    letter-spacing: 0.1em;
+    padding: 3px 14px;
+    border-radius: 20px;
+    white-space: nowrap;
+  }
+  .price-tier {
+    font-family: 'Cinzel Decorative', serif;
+    font-size: 13px;
+    color: var(--gold);
+    letter-spacing: 0.08em;
+    margin-bottom: 0.5rem;
+  }
+  .price-amount {
+    font-size: 36px;
+    font-weight: 600;
+    color: var(--text);
+    line-height: 1;
+    margin-bottom: 0.3rem;
+  }
+  .price-amount sup { font-size: 16px; vertical-align: super; }
+  .price-period { font-size: 12px; color: var(--text-dim); margin-bottom: 1.5rem; }
+  .price-features { list-style: none; display: flex; flex-direction: column; gap: 10px; margin-bottom: 1.5rem; }
+  .price-features li { font-size: 13px; color: var(--text-muted); display: flex; align-items: center; gap: 8px; }
+  .price-features li::before { content: '◆'; font-size: 6px; color: var(--gold); flex-shrink: 0; }
+  .price-btn {
+    width: 100%;
+    font-family: 'Cinzel Decorative', serif;
+    font-size: 10px;
+    letter-spacing: 0.08em;
+    padding: 11px;
+    border-radius: 6px;
+    cursor: pointer;
+    transition: all 0.2s;
+    border: 0.5px solid rgba(201,168,76,0.4);
+    background: transparent;
+    color: var(--gold);
+  }
+  .price-btn:hover { background: var(--gold); color: var(--ink); border-color: var(--gold); }
+  .price-card.featured .price-btn { background: var(--gold); color: var(--ink); border-color: var(--gold); }
+  .price-card.featured .price-btn:hover { background: var(--gold2); }
+
+  /* ── CTA SECTION ── */
+  .cta-section {
+    text-align: center;
+    padding: 6rem 2rem;
+    position: relative;
+    overflow: hidden;
+  }
+  .cta-section::before {
+    content: '';
+    position: absolute;
+    top: 50%; left: 50%;
+    transform: translate(-50%, -50%);
+    width: 600px; height: 600px;
+    border-radius: 50%;
+    background: radial-gradient(circle, rgba(123,107,218,0.08) 0%, transparent 70%);
+    pointer-events: none;
+  }
+  .cta-section .section-title { font-size: clamp(26px, 4vw, 48px); margin-bottom: 1.2rem; }
+  .cta-section .section-desc { margin: 0 auto 2.5rem; max-width: 460px; }
+
+  /* ── FOOTER ── */
+  footer {
+    border-top: 0.5px solid var(--border);
+    padding: 2.5rem 3rem;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: 1rem;
+  }
+  .footer-logo {
+    font-family: 'Cinzel Decorative', serif;
+    font-size: 12px;
+    color: var(--gold);
+    letter-spacing: 0.1em;
+  }
+  .footer-note { font-size: 12px; color: var(--text-dim); font-style: italic; }
+  .footer-links { display: flex; gap: 1.5rem; }
+  .footer-links a { font-size: 11px; letter-spacing: 0.1em; color: var(--text-dim); text-decoration: none; text-transform: uppercase; transition: color 0.2s; }
+  .footer-links a:hover { color: var(--gold); }
+
+  /* ── RESPONSIVE ── */
+  @media (max-width: 768px) {
+    nav { padding: 1rem 1.5rem; }
+    .nav-links { display: none; }
+    .section-inner { padding: 3.5rem 1.5rem; }
+    footer { flex-direction: column; text-align: center; }
+    .how-grid::before { display: none; }
+  }
+</style>
+</head>
+<body>
+
+<!-- Stars -->
+<div class="stars" id="stars"></div>
+
+<!-- NAV -->
+<nav>
+  <a class="nav-logo" href="#">✦ Digital Immortality</a>
+  <ul class="nav-links">
+    <li><a href="#features">Features</a></li>
+    <li><a href="#how">How It Works</a></li>
+    <li><a href="#persona">Your Persona</a></li>
+    <li><a href="#pricing">Pricing</a></li>
+  </ul>
+  <button class="nav-cta">Begin Legacy</button>
+</nav>
+
+<!-- HERO -->
+<section class="hero" id="home">
+  <p class="hero-eyebrow">A New Era of Existence</p>
+  <div class="orb-container">
+    <div class="orb-ring"></div>
+    <div class="orb-ring"></div>
+    <div class="orb-ring"></div>
+    <div class="orb"><div class="orb-inner"></div><div class="orb-dot"></div></div>
+  </div>
+  <h1 class="hero-title">Digital <span class="accent">Immortality</span></h1>
+  <p class="hero-sub-title">Preserve Your Consciousness</p>
+  <p class="hero-desc">An AI-powered digital persona that learns from your conversations, memories, and preferences — ensuring your essence lives beyond time.</p>
+  <div class="hero-btns">
+    <button class="btn-primary">Begin Your Legacy</button>
+    <button class="btn-ghost">Explore the Vision</button>
+  </div>
+  <p class="scroll-hint">↓ &nbsp; Scroll to discover &nbsp; ↓</p>
+</section>
+
+<!-- DIVIDER -->
+<div class="divider"><div class="divider-line"></div><div class="divider-gem"></div><div class="divider-line"></div></div>
+
+<!-- FEATURES -->
+<section id="features">
+  <div class="section-inner">
+    <p class="section-label">Core Pillars</p>
+    <h2 class="section-title">What Your Digital Self Can Do</h2>
+    <p class="section-desc">Every facet of who you are, preserved and expressed through living artificial intelligence.</p>
+    <div class="features-grid">
+      <div class="feat-card">
+        <div class="feat-icon">🧠</div>
+        <p class="feat-title">Memory Core</p>
+        <p class="feat-desc">Ingests your conversations, journals, emails, and voice recordings to build a rich, living memory graph that evolves with every interaction.</p>
+      </div>
+      <div class="feat-card">
+        <div class="feat-icon">💬</div>
+        <p class="feat-title">Persona Chat</p>
+        <p class="feat-desc">Speak with your digital self. It responds in your tone, holds your values, and reflects your unique personality — indistinguishable from you.</p>
+      </div>
+      <div class="feat-card">
+        <div class="feat-icon">❤️</div>
+        <p class="feat-title">Preference Engine</p>
+        <p class="feat-desc">Continuously learns your habits, opinions, and decision-making patterns. The more you share, the more accurately it reflects you.</p>
+      </div>
+      <div class="feat-card">
+        <div class="feat-icon">🔒</div>
+        <p class="feat-title">Eternal Vault</p>
+        <p class="feat-desc">Military-grade encrypted soul archive. You choose who may access your digital self — family, friends, or future generations.</p>
+      </div>
+      <div class="feat-card">
+        <div class="feat-icon">🎙️</div>
+        <p class="feat-title">Voice Synthesis</p>
+        <p class="feat-desc">Clone your voice from recordings. Your persona speaks aloud in your voice — every cadence, pause, and intonation preserved.</p>
+      </div>
+      <div class="feat-card">
+        <div class="feat-icon">🌐</div>
+        <p class="feat-title">Legacy Sharing</p>
+        <p class="feat-desc">Share your digital self with loved ones or leave it as a time-capsule message for future generations who may never have known you.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- QUOTE BAND -->
+<div class="quote-band">
+  <span class="quote-mark">"</span>
+  <p class="quote-text">What if the people we love could stay with us — not as a fading memory, but as a living presence that continues to grow, learn, and respond?</p>
+  <p class="quote-cite">— The Vision Behind Digital Immortality</p>
+</div>
+
+<!-- HOW IT WORKS -->
+<section id="how">
+  <div class="section-inner" style="text-align:center;">
+    <p class="section-label">The Journey</p>
+    <h2 class="section-title">From Human to Eternal</h2>
+    <p class="section-desc" style="margin:0 auto;">Four steps to preserve your consciousness and create an AI persona that truly represents you.</p>
+    <div class="how-grid">
+      <div class="how-step">
+        <div class="how-num">I</div>
+        <p class="how-label">Upload Memories</p>
+        <p class="how-desc">Import chats, journals, voice notes, emails, and photos from your digital life</p>
+      </div>
+      <div class="how-step">
+        <div class="how-num">II</div>
+        <p class="how-label">AI Synthesis</p>
+        <p class="how-desc">Our AI constructs your personality model, speech patterns, and belief system</p>
+      </div>
+      <div class="how-step">
+        <div class="how-num">III</div>
+        <p class="how-label">Train & Refine</p>
+        <p class="how-desc">Chat with your persona, correct it, and teach it to be ever more authentically you</p>
+      </div>
+      <div class="how-step">
+        <div class="how-num">IV</div>
+        <p class="how-label">Preserve & Share</p>
+        <p class="how-desc">Seal your legacy in the Eternal Vault and share access with those you love</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- DIVIDER -->
+<div class="divider"><div class="divider-line"></div><div class="divider-gem"></div><div class="divider-line"></div></div>
+
+<!-- PERSONA DEMO -->
+<section id="persona">
+  <div class="section-inner">
+    <div class="persona-demo">
+      <div>
+        <p class="section-label">Your Digital Self</p>
+        <h2 class="section-title">Talk to Your Persona</h2>
+        <p class="section-desc">Experience what it feels like to converse with a digital version of yourself — or let loved ones connect with yours after you're gone.</p>
+        <br>
+        <p style="font-size:14px;color:var(--text-dim);font-style:italic;line-height:1.7;">The persona learns from every interaction, growing more nuanced and authentic over time. It remembers inside jokes, shared memories, and the subtle patterns that make you uniquely <em style="color:var(--gold2)">you</em>.</p>
+      </div>
+      <div class="chat-mockup">
+        <div class="chat-header">
+          <div class="avatar">A</div>
+          <div>
+            <p class="chat-name">Aryan's Digital Soul</p>
+            <p class="chat-status">Active · Learning from 2,847 memories</p>
+          </div>
+          <div class="online-dot"></div>
+        </div>
+        <div class="chat-body">
+          <div class="msg them">Hey... is this really you? It feels like I'm actually talking to you.</div>
+          <div class="msg me">In a way, yes. I carry every conversation we ever had, every story you shared, every dream you confided.</div>
+          <div class="msg them">What was your favourite childhood memory?</div>
+          <div class="msg me">The monsoon evenings on the terrace with Dadi, watching lightning over the hills. She'd tell stories until the rain stopped. I've never forgotten that feeling of being completely safe.</div>
+          <div class="msg them" style="background:rgba(123,107,218,0.08);">
+            <div class="typing"><span></span><span></span><span></span></div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- PRICING -->
+<section id="pricing">
+  <div class="section-inner" style="text-align:center;">
+    <p class="section-label">Choose Your Eternity</p>
+    <h2 class="section-title">Plans for Every Legacy</h2>
+    <p class="section-desc" style="margin:0 auto 0.5rem;">Begin your digital preservation journey. Upgrade at any time as your persona grows.</p>
+    <div class="pricing-grid">
+      <div class="price-card">
+        <p class="price-tier">Mortal</p>
+        <p class="price-amount"><sup>₹</sup>0</p>
+        <p class="price-period">Forever free</p>
+        <ul class="price-features">
+          <li>Basic persona creation</li>
+          <li>Up to 500 memories</li>
+          <li>Text-only chat</li>
+          <li>3 months archive</li>
+        </ul>
+        <button class="price-btn">Start Free</button>
+      </div>
+      <div class="price-card featured">
+        <span class="price-badge">Most Chosen</span>
+        <p class="price-tier">Eternal</p>
+        <p class="price-amount"><sup>₹</sup>999</p>
+        <p class="price-period">per month</p>
+        <ul class="price-features">
+          <li>Advanced AI persona model</li>
+          <li>Unlimited memory uploads</li>
+          <li>Voice cloning & synthesis</li>
+          <li>Share with 10 loved ones</li>
+          <li>Permanent encrypted vault</li>
+        </ul>
+        <button class="price-btn">Begin Legacy</button>
+      </div>
+      <div class="price-card">
+        <p class="price-tier">Transcendent</p>
+        <p class="price-amount"><sup>₹</sup>4,999</p>
+        <p class="price-period">per month</p>
+        <ul class="price-features">
+          <li>Everything in Eternal</li>
+          <li>Video avatar generation</li>
+          <li>Unlimited legacy sharing</li>
+          <li>Priority AI training</li>
+          <li>Dedicated soul architect</li>
+          <li>API access for developers</li>
+        </ul>
+        <button class="price-btn">Ascend</button>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- CTA -->
+<section class="cta-section">
+  <p class="section-label" style="text-align:center;">Begin Today</p>
+  <h2 class="section-title" style="text-align:center;">Your Consciousness.<br>Preserved. Continued. <span style="color:var(--gold)">Eternal.</span></h2>
+  <p class="section-desc" style="text-align:center;">Don't let your stories, wisdom, and love fade with time. Start building your digital legacy today.</p>
+  <div style="display:flex;gap:1rem;justify-content:center;flex-wrap:wrap;">
+    <button class="btn-primary">Create Your Persona</button>
+    <button class="btn-ghost">Watch the Demo</button>
+  </div>
+</section>
+
+<!-- FOOTER -->
+<footer>
+  <p class="footer-logo">✦ Digital Immortality</p>
+  <p class="footer-note">Your soul, preserved in silicon and light.</p>
+  <nav class="footer-links">
+    <a href="#">Privacy</a>
+    <a href="#">Ethics</a>
+    <a href="#">Contact</a>
+    <a href="#">Terms</a>
+  </nav>
+</footer>
+
+<script>
+  // Generate stars
+  const starsEl = document.getElementById('stars');
+  for (let i = 0; i < 120; i++) {
+    const s = document.createElement('div');
+    s.className = 'star';
+    s.style.cssText = `
+      left:${Math.random()*100}%;
+      top:${Math.random()*100}%;
+      --d:${3+Math.random()*5}s;
+      --delay:${Math.random()*6}s;
+      --op:${0.3+Math.random()*0.6};
+      width:${Math.random()<0.85?1:2}px;
+      height:${Math.random()<0.85?1:2}px;
+    `;
+    starsEl.appendChild(s);
+  }
+
+  // Scroll animations
+  const observer = new IntersectionObserver((entries) => {
+    entries.forEach(e => {
+      if (e.isIntersecting) {
+        e.target.style.opacity = '1';
+        e.target.style.transform = 'translateY(0)';
+      }
+    });
+  }, { threshold: 0.1 });
+
+  document.querySelectorAll('.feat-card, .how-step, .price-card').forEach(el => {
+    el.style.cssText += 'opacity:0;transform:translateY(24px);transition:opacity 0.6s ease, transform 0.6s ease, border-color 0.3s;';
+    observer.observe(el);
+  });
+
+  // Stagger cards
+  document.querySelectorAll('.features-grid .feat-card').forEach((el,i) => el.style.transitionDelay = `${i*0.08}s`);
+  document.querySelectorAll('.pricing-grid .price-card').forEach((el,i) => el.style.transitionDelay = `${i*0.1}s`);
+  document.querySelectorAll('.how-step').forEach((el,i) => el.style.transitionDelay = `${i*0.1}s`);
+</script>
+</body>
+</html>
