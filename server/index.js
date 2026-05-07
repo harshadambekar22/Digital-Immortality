@@ -34,8 +34,83 @@ async function writeJson(file, data) {
   await fs.rename(tmp, file)
 }
 
+async function readJson(file, fallback) {
+  try {
+    const raw = await fs.readFile(file, 'utf8')
+    return JSON.parse(raw)
+  } catch {
+    return fallback
+  }
+}
+
+function nowIso() {
+  return new Date().toISOString()
+}
+
+function asArray(v) {
+  return Array.isArray(v) ? v : []
+}
+
+function pickString(v, max = 4000) {
+  return String(v ?? '').slice(0, max)
+}
+
+function userFile() {
+  return path.join(DATA_DIR, 'users.json')
+}
+
+function memoriesFile(userId) {
+  return path.join(DATA_DIR, `memories.${safeId(userId)}.json`)
+}
+
+function timelineFile(userId) {
+  return path.join(DATA_DIR, `timeline.${safeId(userId)}.json`)
+}
+
+function chatFile(userId) {
+  return path.join(DATA_DIR, `chat.${safeId(userId)}.json`)
+}
+
 app.get('/api/health', async (_req, res) => {
   res.json({ ok: true })
+})
+
+// ---- Users (mirrors Emergent-style /users) ----
+app.get('/api/users', async (_req, res) => {
+  await ensureDataDir()
+  const users = await readJson(userFile(), [])
+  res.json({ ok: true, users })
+})
+
+app.post('/api/users', async (req, res) => {
+  await ensureDataDir()
+  const users = await readJson(userFile(), [])
+  const name = pickString(req.body?.name, 120).trim()
+  const email = pickString(req.body?.email, 180).trim()
+  if (!name) {
+    res.status(400).json({ error: 'Name is required' })
+    return
+  }
+  const user = { id: safeId(req.body?.id), name, email, createdAt: nowIso() }
+  users.push(user)
+  await writeJson(userFile(), users)
+  res.json({ ok: true, user })
+})
+
+app.put('/api/users/:userId', async (req, res) => {
+  await ensureDataDir()
+  const users = await readJson(userFile(), [])
+  const userId = safeId(req.params.userId)
+  const idx = users.findIndex((u) => u.id === userId)
+  if (idx < 0) {
+    res.status(404).json({ error: 'User not found' })
+    return
+  }
+  const name = pickString(req.body?.name, 120).trim()
+  const email = pickString(req.body?.email, 180).trim()
+  users[idx] = { ...users[idx], ...(name ? { name } : {}), ...(email ? { email } : {}) }
+  await writeJson(userFile(), users)
+  res.json({ ok: true, user: users[idx] })
 })
 
 app.post('/api/ingest', async (req, res) => {
@@ -53,6 +128,138 @@ app.post('/api/ingest', async (req, res) => {
   }
   await writeJson(path.join(DATA_DIR, `${clientId}.json`), record)
   res.json({ ok: true, clientId })
+})
+
+// ---- Memories (mirrors /memories) ----
+app.get('/api/memories/:userId', async (req, res) => {
+  await ensureDataDir()
+  const file = memoriesFile(req.params.userId)
+  const memories = await readJson(file, [])
+  res.json({ ok: true, memories })
+})
+
+app.post('/api/memories', async (req, res) => {
+  await ensureDataDir()
+  const userId = safeId(req.body?.userId)
+  const text = pickString(req.body?.text, 800).trim()
+  const source = pickString(req.body?.source, 32).trim() || 'manual'
+  if (!userId || !text) {
+    res.status(400).json({ error: 'userId and text are required' })
+    return
+  }
+  const file = memoriesFile(userId)
+  const memories = await readJson(file, [])
+  const memory = { id: safeId(req.body?.id), userId, text, source, createdAt: Date.now() }
+  memories.unshift(memory)
+  await writeJson(file, memories)
+  res.json({ ok: true, memory })
+})
+
+app.delete('/api/memories/:memoryId', async (req, res) => {
+  await ensureDataDir()
+  const userId = safeId(req.query.userId)
+  if (!userId) {
+    res.status(400).json({ error: 'userId query param is required' })
+    return
+  }
+  const file = memoriesFile(userId)
+  const memories = await readJson(file, [])
+  const next = memories.filter((m) => m.id !== safeId(req.params.memoryId))
+  await writeJson(file, next)
+  res.json({ ok: true })
+})
+
+// ---- Timeline (mirrors /timeline) ----
+app.get('/api/timeline/:userId', async (req, res) => {
+  await ensureDataDir()
+  const events = await readJson(timelineFile(req.params.userId), [])
+  res.json({ ok: true, events })
+})
+
+app.post('/api/timeline', async (req, res) => {
+  await ensureDataDir()
+  const userId = safeId(req.body?.userId)
+  const title = pickString(req.body?.title, 200).trim()
+  const body = pickString(req.body?.body, 1200).trim()
+  const when = pickString(req.body?.when, 40).trim() || nowIso()
+  if (!userId || !title) {
+    res.status(400).json({ error: 'userId and title are required' })
+    return
+  }
+  const file = timelineFile(userId)
+  const events = await readJson(file, [])
+  const event = { id: safeId(req.body?.id), userId, title, body, when, createdAt: Date.now() }
+  events.unshift(event)
+  await writeJson(file, events)
+  res.json({ ok: true, event })
+})
+
+// ---- Chat history (mirrors /chat + /chat/history/:userId) ----
+app.get('/api/chat/history/:userId', async (req, res) => {
+  await ensureDataDir()
+  const history = await readJson(chatFile(req.params.userId), [])
+  res.json({ ok: true, history })
+})
+
+app.post('/api/chat', async (req, res) => {
+  await ensureDataDir()
+  const userId = safeId(req.body?.userId)
+  const mode = pickString(req.body?.mode, 24).trim() || 'universal'
+  const preferredLanguage = pickString(req.body?.preferredLanguage, 40).trim() || 'auto'
+  const system = pickString(req.body?.system, 8000).trim()
+  const content = pickString(req.body?.content, 8000).trim()
+  const messages = asArray(req.body?.messages)
+  if (!userId) {
+    res.status(400).json({ error: 'userId is required' })
+    return
+  }
+  const file = chatFile(userId)
+  const history = await readJson(file, [])
+  if (content) history.push({ role: 'user', content, at: Date.now() })
+
+  try {
+    let reply = ''
+    if (mode === 'persona') {
+      if (!system) throw new Error('Missing system prompt')
+      const payload = messages.length > 0 ? messages : history.map((m) => ({ role: m.role, content: m.content }))
+      reply = await openaiChat([{ role: 'system', content: system }, ...payload], 0.75, 1024)
+    } else {
+      const sys = `You are a multilingual AI chatbot for a product called Digital Immortality.
+Understand and respond in ANY language.
+- If preferred language is "auto", detect the user's language from their latest message and reply in that same language.
+- If preferred language is a specific language, reply in that language unless the user explicitly asks otherwise.
+Preferred language: ${preferredLanguage}`.trim()
+      const payload = messages.length > 0 ? messages : history.map((m) => ({ role: m.role, content: m.content }))
+      reply = await openaiChat([{ role: 'system', content: sys }, ...payload], 0.6, 900)
+    }
+    history.push({ role: 'assistant', content: reply, at: Date.now() })
+    await writeJson(file, history.slice(-200))
+    res.json({ ok: true, reply })
+  } catch (e) {
+    await writeJson(file, history.slice(-200))
+    res.status(500).json({ error: e instanceof Error ? e.message : 'Chat failed' })
+  }
+})
+
+// ---- Analytics (mirrors /analytics/:userId) ----
+app.get('/api/analytics/:userId', async (req, res) => {
+  await ensureDataDir()
+  const userId = safeId(req.params.userId)
+  const memories = await readJson(memoriesFile(userId), [])
+  const timeline = await readJson(timelineFile(userId), [])
+  const history = await readJson(chatFile(userId), [])
+  const userMessages = history.filter((m) => m.role === 'user').length
+  const assistantMessages = history.filter((m) => m.role === 'assistant').length
+  res.json({
+    ok: true,
+    analytics: {
+      memories: memories.length,
+      timelineEvents: timeline.length,
+      userMessages,
+      assistantMessages,
+      updatedAt: nowIso(),
+    },
+  })
 })
 
 async function openaiChat(messages, temperature, max_tokens) {
@@ -142,7 +349,6 @@ Rules:
 })
 
 app.listen(PORT, () => {
-  // eslint-disable-next-line no-console
   console.log(`Digital Immortality API listening on http://localhost:${PORT}`)
 })
 
